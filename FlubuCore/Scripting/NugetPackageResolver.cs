@@ -61,6 +61,28 @@ namespace FlubuCore.Scripting
                 {
                     throw new ScriptException($"Nuget package {packageReference.Id} not found.");
                 }
+
+                //// Load dependencies
+                ////foreach (var dependency in compileLibrary.Dependencies)
+                ////{
+                ////    var lib = compileLibraries.FirstOrDefault(x => x.Name.Equals(dependency.Name, StringComparison.OrdinalIgnoreCase));
+                ////    if (lib == null)
+                ////    {
+                ////       continue;
+                ////    }
+
+                ////    if (lib.Assemblies.Count == 0)
+                ////    {
+                ////        continue;
+                ////    }
+
+                ////    bool dependencyFound = GetPackageFullPath(packageFolders, lib, pathToReferences);
+
+                ////    if (!dependencyFound)
+                ////    {
+                ////        throw new ScriptException($"Nuget package {dependency.Name} not found.");
+                ////    }
+                ////}
             }
 
             File.Delete(NugetPackageResolveConstants.GeneratedProjectFileName);
@@ -111,7 +133,11 @@ namespace FlubuCore.Scripting
 
                 if (File.Exists(packagePath))
                 {
-                    pathToReferences.Add(packagePath);
+                    if (Path.GetExtension(packagePath).Equals(".dll", StringComparison.OrdinalIgnoreCase))
+                    {
+                        pathToReferences.Add(packagePath);
+                    }
+
                     return true;
                 }
             }
