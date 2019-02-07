@@ -29,7 +29,7 @@ namespace FlubuCore.Scripting
                 taskSession.LogInfo(e.Message);
                 return 3;
             }
-            catch (WebApiException e)
+            catch (WebApiException)
             {
                 taskSession.OnFinish();
                 if (taskSession.Args.RethrowOnException)
@@ -140,16 +140,24 @@ namespace FlubuCore.Scripting
                     taskSession.TargetTree.ScriptArgsHelp = ScriptProperties.GetPropertiesHelp(this);
                 }
 
-                foreach (var targetToRun in targetsInfo.targetsToRun) taskSession.TargetTree.RunTarget(taskSession, targetToRun);
+                BeforeTargetExecution(taskSession);
+                foreach (var targetToRun in targetsInfo.targetsToRun)
+                {
+                    taskSession.TargetTree.RunTarget(taskSession, targetToRun);
+                }
+
+                AfterTargetExecution(taskSession);
             }
             else
             {
                 taskSession.LogInfo("Running target's in parallel.");
                 var tasks = new List<Task>();
+                BeforeTargetExecution(taskSession);
                 foreach (var targetToRun in targetsInfo.targetsToRun)
                     tasks.Add(taskSession.TargetTree.RunTargetAsync(taskSession, targetToRun));
 
                 Task.WaitAll(tasks.ToArray());
+                AfterTargetExecution(taskSession);
             }
 
             if (targetsInfo.unknownTarget)
@@ -158,6 +166,14 @@ namespace FlubuCore.Scripting
             }
 
             AssertAllTargetDependenciesWereExecuted(taskSession);
+        }
+
+        protected virtual void BeforeTargetExecution(ITaskContext context)
+        {
+        }
+
+        protected virtual void AfterTargetExecution(ITaskContext context)
+        {
         }
 
         private void ConfigureDefaultProps(ITaskSession taskSession)

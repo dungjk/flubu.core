@@ -10,7 +10,7 @@ using FlubuCore.Infrastructure;
 using FlubuCore.IO.Wrappers;
 using FlubuCore.Scripting;
 using FlubuCore.Scripting.Analysis;
-using FlubuCore.Scripting.Processors;
+using FlubuCore.Scripting.Analysis.Processors;
 using FlubuCore.Services;
 using FlubuCore.Targeting;
 using FlubuCore.Tasks;
@@ -87,13 +87,14 @@ namespace FlubuCore.WebApi.Infrastructure
         public static IServiceCollection AddScriptAnalyserForWebApi(this IServiceCollection services)
         {
             return services
-                .AddScoped<IScriptAnalyser, ScriptAnalyser>()
-                .AddScoped<IDirectiveProcessor, CsDirectiveProcessor>()
-                .AddScoped<IDirectiveProcessor, ClassDirectiveProcessor>()
-                .AddScoped<IDirectiveProcessor, AssemblyDirectiveProcessor>()
-                .AddScoped<IDirectiveProcessor, ReferenceDirectiveProcessor>()
-                .AddScoped<IDirectiveProcessor, NamespaceDirectiveProcessor>()
-                .AddScoped<IDirectiveProcessor, NugetPackageDirectirveProcessor>();
+                .AddScoped<IProjectFileAnalyzer, ProjectFileAnalyzer>()
+                .AddScoped<IScriptAnalyzer, ScriptAnalyzer>()
+                .AddScoped<IScriptProcessor, CsDirectiveProcessor>()
+                .AddScoped<IScriptProcessor, ClassDirectiveProcessor>()
+                .AddScoped<IScriptProcessor, AssemblyDirectiveProcessor>()
+                .AddScoped<IScriptProcessor, ReferenceDirectiveProcessor>()
+                .AddScoped<IScriptProcessor, NamespaceProcessor>()
+                .AddScoped<IScriptProcessor, NugetPackageDirectirveProcessor>();
         }
 
         public static IServiceCollection AddTasksForWebApi(this IServiceCollection services)
@@ -106,7 +107,7 @@ namespace FlubuCore.WebApi.Infrastructure
                 .AddTransient<ILinuxTaskFluentInterface, LinuxTaskFluentInterface>()
                 .AddTransient<IToolsFluentInterface, ToolsFluentInterface>()
                 .AddTransient<IGitFluentInterface, GitFluentInterface>()
-                .AddTransient<IDockerFluentInterface, DockerFluentInterface>()
+                .AddTransient<DockerFluentInterface>()
                 .AddTransient<ITarget, TargetFluentInterface>()
                 .AddTransient<GenerateCommonAssemblyInfoTask>()
                 .AddTransient<FetchBuildVersionFromFileTask>()
@@ -128,7 +129,9 @@ namespace FlubuCore.WebApi.Infrastructure
                 .AddTask<GitAddTask>()
                 .AddTask<GitPullTask>()
                 .AddTask<GitCommitTask>()
-                .AddTask<GitPushTask>();
+                .AddTask<GitPushTask>()
+                .AddTask<GitSubmoduleTask>()
+                .AddTask<GitVersionTask>();
         }
     }
 }

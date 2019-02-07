@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Threading;
 using DotNet.Cli.Flubu.Commanding;
 using DotNet.Cli.Flubu.Infrastructure;
 using FlubuCore.Commanding;
+using FlubuCore.Context;
 using FlubuCore.Infrastructure;
-using Microsoft.Extensions.CommandLineUtils;
+using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +16,10 @@ namespace DotNet.Cli.Flubu
         private static readonly IServiceCollection Services = new ServiceCollection();
 
         private static IServiceProvider _provider;
+
+        private static bool _cleanUpPerformed = false;
+
+        private static volatile bool _wait = false;
 
         public static int Main(string[] args)
         {
@@ -35,8 +41,33 @@ namespace DotNet.Cli.Flubu
             var cmdApp = _provider.GetRequiredService<CommandLineApplication>();
             ICommandExecutor executor = _provider.GetRequiredService<ICommandExecutor>();
             executor.FlubuHelpText = cmdApp.GetHelpText();
+
+            Console.CancelKeyPress += OnCancelKeyPress;
             var result = executor.ExecuteAsync().Result;
+
+            while (_wait)
+            {
+                Thread.Sleep(250);
+            }
+
             return result;
+        }
+
+        private static void OnCancelKeyPress(object sender, ConsoleCancelEventArgs eventArgs)
+        {
+            if (!_cleanUpPerformed && CleanUpStore.TaskCleanUpActions?.Count > 0)
+            {
+                _wait = true;
+                Console.WriteLine($"Performing clean up actions:");
+                var taskSession = _provider.GetService<ITaskSession>();
+                foreach (var cleanUpAction in CleanUpStore.TaskCleanUpActions)
+                {
+                    cleanUpAction.Invoke(taskSession);
+                    Console.WriteLine($"Finished performing clean up actions.");
+                }
+
+                _wait = false;
+            }
         }
     }
 }

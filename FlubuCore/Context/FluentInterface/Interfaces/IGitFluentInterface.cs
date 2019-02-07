@@ -31,6 +31,13 @@ namespace FlubuCore.Context.FluentInterface.Interfaces
         GitCloneTask Clone(string repository, string directory);
 
         /// <summary>
+        /// Checkout specified branch.
+        /// </summary>
+        /// <param name="branch">Branch to checkout.</param>
+        /// <returns></returns>
+        GitCheckoutTask Checkout(string branch);
+
+        /// <summary>
         /// This command updates the index using the current content found in the working tree, to prepare the content staged for the next commit.
         /// </summary>
         /// <returns></returns>
@@ -49,5 +56,23 @@ namespace FlubuCore.Context.FluentInterface.Interfaces
         /// <param name="file">Files to remove. Fileglobs (e.g. *.c) can be given to remove all matching files.</param>
         /// <returns></returns>
         GitRemoveFilesTask RemoveFile(string file);
+
+        /// <summary>
+        /// Create raw submodule GIT command.
+        /// </summary>
+        /// <returns></returns>
+        GitSubmoduleTask Submodule();
+
+        /// <summary>
+        /// Create submodules init task with --init and --recursive arguments.
+        /// </summary>
+        /// <returns></returns>
+        GitSubmoduleTask InitSubmodules();
+
+        /// <summary>
+        /// Create submodules pull task with --remote and --merge arguments.
+        /// </summary>
+        /// <returns></returns>
+        GitSubmoduleTask PullSubmodules();
     }
 }

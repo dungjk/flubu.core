@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using FlubuCore.Services;
+using FlubuCore.WebApi.Client;
 using FlubuCore.WebApi.Model;
 using FlubuCore.WebApi.Models;
 using FlubuCore.WebApi.Repository;
@@ -21,14 +23,6 @@ namespace FlubuCore.WebApi.Tests.ClientTests
         public PackagesClientTests(ClientFixture clientFixture)
             : base(clientFixture)
         {
-        }
-
-        [Fact]
-        public async Task Upload1PackageWithSearch_Succesfull()
-        {
-            var token = await Client.GetToken(new GetTokenRequest { Username = "User", Password = "password" });
-            Client.Token = token.Token;
-
             if (!Directory.Exists("Packages"))
             {
                 Directory.CreateDirectory("Packages");
@@ -38,11 +32,18 @@ namespace FlubuCore.WebApi.Tests.ClientTests
                 Directory.Delete("Packages", true);
                 Directory.CreateDirectory("Packages");
             }
+        }
+
+        [Fact]
+        public async Task Upload1PackageWithSearch_Succesfull()
+        {
+            var token = await Client.GetTokenAsync(new GetTokenRequest { Username = "User", Password = "password" });
+            Client.Token = token.Token;
 
             await Client.UploadPackageAsync(new UploadPackageRequest
             {
                 DirectoryPath = "TestData",
-                PackageSearchPattern = "SimpleScript2.zip"
+                PackageSearchPattern = "SimpleScript2.zip",
             });
 
             Assert.True(File.Exists("Packages/SimpleScript2.zip"));
@@ -52,17 +53,8 @@ namespace FlubuCore.WebApi.Tests.ClientTests
         [Fact]
         public async Task Upload2Packages_Succesfull()
         {
-            var token = await Client.GetToken(new GetTokenRequest { Username = "User", Password = "password" });
+            var token = await Client.GetTokenAsync(new GetTokenRequest { Username = "User", Password = "password" });
             Client.Token = token.Token;
-            if (!Directory.Exists("Packages"))
-            {
-                Directory.CreateDirectory("Packages");
-            }
-            else
-            {
-                Directory.Delete("Packages", true);
-                Directory.CreateDirectory("Packages");
-            }
 
             await Client.UploadPackageAsync(new UploadPackageRequest { DirectoryPath = "TestData" });
 
@@ -73,18 +65,8 @@ namespace FlubuCore.WebApi.Tests.ClientTests
         [Fact]
         public async Task Upload1PackageToSubDirectory_Succesfull()
         {
-            var token = await Client.GetToken(new GetTokenRequest { Username = "User", Password = "password" });
+            var token = await Client.GetTokenAsync(new GetTokenRequest { Username = "User", Password = "password" });
             Client.Token = token.Token;
-
-            if (!Directory.Exists("Packages"))
-            {
-                Directory.CreateDirectory("Packages");
-            }
-            else
-            {
-                Directory.Delete("Packages", true);
-                Directory.CreateDirectory("Packages");
-            }
 
             await Client.UploadPackageAsync(new UploadPackageRequest
             {
@@ -100,9 +82,30 @@ namespace FlubuCore.WebApi.Tests.ClientTests
         }
 
         [Fact]
+        public async Task Upload1PackageToSubDirectory_DirectoryOutsideOfPackagesFolder_ThrowsForbiden()
+        {
+            var token = await Client.GetTokenAsync(new GetTokenRequest
+            {
+                Username = "User", Password = "password"
+            });
+
+            Client.Token = token.Token;
+
+            var ex = await Assert.ThrowsAsync<WebApiException>(async () => await Client.UploadPackageAsync(
+                new UploadPackageRequest
+                {
+                    DirectoryPath = "TestData",
+                    PackageSearchPattern = "SimpleScript2.zip",
+                    UploadToSubDirectory = "../../SomeSubdir"
+                }));
+
+            Assert.Equal(HttpStatusCode.Forbidden, ex.StatusCode);
+        }
+
+        [Fact]
         public async Task DeletePackages_Succesfull()
         {
-            var token = await Client.GetToken(new GetTokenRequest { Username = "User", Password = "password" });
+            var token = await Client.GetTokenAsync(new GetTokenRequest { Username = "User", Password = "password" });
             Client.Token = token.Token;
             if (Directory.Exists("Packages"))
             {
@@ -122,7 +125,7 @@ namespace FlubuCore.WebApi.Tests.ClientTests
         [Fact]
         public async Task DeletePackages_SubFolder_Succesfull()
         {
-            var token = await Client.GetToken(new GetTokenRequest { Username = "User", Password = "password" });
+            var token = await Client.GetTokenAsync(new GetTokenRequest { Username = "User", Password = "password" });
             Client.Token = token.Token;
             if (Directory.Exists("Packages"))
             {
@@ -146,6 +149,25 @@ namespace FlubuCore.WebApi.Tests.ClientTests
             Assert.False(File.Exists("Packages/subdir/test.txt"));
             Assert.True(File.Exists("Packages//ttt.txt"));
             Assert.True(Directory.Exists("Packages/subdir"));
+        }
+
+        [Fact]
+        public async Task DeletePackagesFromSubDir_DirectoryOutsideOfPackagesFolder_ThrowsForbiden()
+        {
+            var token = await Client.GetTokenAsync(new GetTokenRequest
+            {
+                Username = "User", Password = "password"
+            });
+
+            Client.Token = token.Token;
+
+            var ex = await Assert.ThrowsAsync<WebApiException>(async () => await Client.DeletePackagesAsync(
+                new CleanPackagesDirectoryRequest()
+                {
+                    SubDirectoryToDelete = "../../SomeSubdir"
+                }));
+
+            Assert.Equal(HttpStatusCode.Forbidden, ex.StatusCode);
         }
     }
 }

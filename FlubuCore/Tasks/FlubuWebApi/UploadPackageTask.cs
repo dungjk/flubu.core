@@ -66,12 +66,29 @@ namespace FlubuCore.Tasks.FlubuWebApi
         protected override async Task<int> DoExecuteAsync(ITaskContextInternal context)
         {
             var client = WebApiClientFactory.Create(context.Properties.Get<string>(BuildProps.LastWebApiBaseUrl));
-            await client.UploadPackageAsync(new UploadPackageRequest
+            var response = await client.ExecuteAsync(c => c.UploadPackageAsync(new UploadPackageRequest
             {
                 PackageSearchPattern = _packageSearchPattern,
                 DirectoryPath = _directoryPath,
                 UploadToSubDirectory = _uploadToSubDirectory,
-            });
+            }));
+
+            if (response.Error != null)
+            {
+                throw new TaskExecutionException($"Upload packages failed: ErrorCode: {response.Error.ErrorCode} ErrorMessage: {response.Error.ErrorMessage}", 99);
+            }
+
+            if (response.Data == null || response.Data.Count == 0)
+            {
+                context.LogInfo("No packages uploaded.");
+            }
+            else
+            {
+                foreach (var package in response.Data)
+                {
+                    context.LogInfo($"Uploaded: {package}");
+                }
+            }
 
             return 0;
         }

@@ -85,63 +85,7 @@ namespace FlubuCore.Context.FluentInterface
             return this;
         }
 
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do(Action<ITarget> action)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T>(Action<ITarget, T> action, T param)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T, T2>(Action<ITarget, T, T2> action, T param, T2 param2)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T, T2, T3>(Action<ITarget, T, T2, T3> action, T param, T2 param2, T3 param3)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T, T2, T3, T4>(Action<ITarget, T, T2, T3, T4> action, T param, T2 param2, T3 param3, T4 param4)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T, T2, T3, T4, T5>(Action<ITarget, T, T2, T3, T4, T5> action, T param, T2 param2, T3 param3, T4 param4, T5 param5)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T, T2, T3, T4, T5, T6>(Action<ITarget, T, T2, T3, T4, T5, T6> action, T param, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T, T2, T3, T4, T5, T6, T7>(Action<ITarget, T, T2, T3, T4, T5, T6, T7> action, T param, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6,
-            T7 param7)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        [Obsolete("Do method for adding set of tasks was renamed to AddTasks.", true)]
-        public ITarget Do<T, T2, T3, T4, T5, T6, T7, T8>(Action<ITarget, T, T2, T3, T4, T5, T6, T7, T8> action, T param, T2 param2, T3 param3, T4 param4, T5 param5, T6 param6,
-            T7 param7, T8 param8)
-        {
-            throw new NotImplementedException("Do method for adding set of tasks was renamed to AddTasks.");
-        }
-
-        public ITarget Group(Action<ITargetBaseFluentInterfaceOfT<ITarget>> targetAction, Action<ITaskContext> onFinally = null, Action<ITaskContext, Exception> onError = null, Func<ITaskContext, bool> when = null)
+        public ITarget Group(Action<ITargetBaseFluentInterfaceOfT<ITarget>> targetAction, Action<ITaskContext> onFinally = null, Action<ITaskContext, Exception> onError = null, Func<ITaskContext, bool> when = null, bool cleanupOnCancel = false)
         {
             LastTargetAction = TargetAction.Other;
             ActionCount = 0;
@@ -150,6 +94,7 @@ namespace FlubuCore.Context.FluentInterface
                 GroupId = Guid.NewGuid().ToString(),
                 OnErrorAction = onError,
                 FinallyAction = onFinally,
+                CleanupOnCancel = cleanupOnCancel
             };
 
             var conditionMeet = when?.Invoke(Context);

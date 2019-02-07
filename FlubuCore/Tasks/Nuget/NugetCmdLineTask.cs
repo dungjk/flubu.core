@@ -6,7 +6,7 @@ using FlubuCore.Tasks.Process;
 
 namespace FlubuCore.Tasks.Nuget
 {
-    public class NuGetCmdLineTask : ExternalProcessTaskBase<NuGetCmdLineTask>
+    public class NuGetCmdLineTask : ExternalProcessTaskBase<int, NuGetCmdLineTask>
     {
         private const string PackagesDirName = "packages";
         private readonly string _command;
@@ -89,7 +89,7 @@ namespace FlubuCore.Tasks.Nuget
                 WithArguments("-Verbosity", Verbosity.ToString());
 
             if (ApiKey != null)
-                WithArguments("-ApiKey", ApiKey);
+                WithArgumentsValueRequired("-ApiKey", ApiKey, true);
 
            return base.DoExecute(context);
         }

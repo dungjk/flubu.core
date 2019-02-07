@@ -6,7 +6,7 @@ using FlubuCore.Tasks.Process;
 
 namespace FlubuCore.Tasks.Docker
 {
-    public class DockerRemoveContainerTask : ExternalProcessTaskBase<DockerRemoveContainerTask>
+    public class DockerRemoveContainerTask : ExternalProcessTaskBase<int, DockerRemoveContainerTask>
     {
         private readonly string[] _containers;
         private string _description;
@@ -72,6 +72,7 @@ namespace FlubuCore.Tasks.Docker
 
         protected override int DoExecute(ITaskContextInternal context)
         {
+            ExecutablePath = "docker";
             WithArguments(_containers);
             return base.DoExecute(context);
         }

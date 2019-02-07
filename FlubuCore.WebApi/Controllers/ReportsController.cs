@@ -52,7 +52,14 @@ namespace FlubuCore.WebApi.Controllers
 
             if (!string.IsNullOrEmpty(request.DownloadFromSubDirectory))
             {
-                downloadDirectory = Path.Combine(downloadDirectory, request.DownloadFromSubDirectory);
+                var destDirPath = Path.GetFullPath(Path.Combine(downloadDirectory + Path.DirectorySeparatorChar));
+                downloadDirectory = Path.GetFullPath(Path.Combine(downloadDirectory, request.DownloadFromSubDirectory));
+
+                if (!downloadDirectory.StartsWith(destDirPath))
+                {
+                    throw new HttpError(HttpStatusCode.Forbidden);
+                }
+
                 dirName = request.DownloadFromSubDirectory;
             }
 
@@ -69,7 +76,7 @@ namespace FlubuCore.WebApi.Controllers
                 throw new HttpError(HttpStatusCode.NotFound, "NoReportsFound");
             }
 
-            task.AddDirectoryToPackage(downloadDirectory, dirName, true).ZipPackage(zipFilename, false).Execute(_taskSession);
+            task.AddDirectoryToPackage(downloadDirectory, dirName, false).ZipPackage(zipFilename, false).Execute(_taskSession);
             string zipPath = Path.Combine(zipDirectory, zipFilename);
 
             Stream fs = System.IO.File.OpenRead(zipPath);
@@ -88,7 +95,13 @@ namespace FlubuCore.WebApi.Controllers
 
             if (!string.IsNullOrWhiteSpace(request.SubDirectoryToDelete))
             {
-                downloadDirectory = Path.Combine(downloadDirectory, request.SubDirectoryToDelete);
+                var destDirPath = Path.GetFullPath(Path.Combine(downloadDirectory + Path.DirectorySeparatorChar));
+                downloadDirectory = Path.GetFullPath(Path.Combine(downloadDirectory, request.SubDirectoryToDelete));
+
+                if (!downloadDirectory.StartsWith(destDirPath))
+                {
+                    throw new HttpError(HttpStatusCode.Forbidden);
+                }
             }
 
             try

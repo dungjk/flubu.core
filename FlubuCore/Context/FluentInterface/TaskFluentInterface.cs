@@ -32,7 +32,7 @@ namespace FlubuCore.Context.FluentInterface
         private readonly DockerFluentInterface _dockerFluentInterface;
 
         /// <inheritdoc />
-        public TaskFluentInterface(IIisTaskFluentInterface iisTasksFluentInterface, IWebApiFluentInterface webApiFluentInterface, IGitFluentInterface gitFluentInterface, IDockerFluentInterface dockerFluentInterface, IHttpClientFactory httpClientFactory)
+        public TaskFluentInterface(IIisTaskFluentInterface iisTasksFluentInterface, IWebApiFluentInterface webApiFluentInterface, IGitFluentInterface gitFluentInterface, DockerFluentInterface dockerFluentInterface, IHttpClientFactory httpClientFactory)
         {
             _iisTasksFluentInterface = (IisTaskFluentInterface)iisTasksFluentInterface;
             _webApiFluentInterface = (WebApiFluentInterface)webApiFluentInterface;
@@ -241,9 +241,13 @@ namespace FlubuCore.Context.FluentInterface
             return _gitFluentInterface;
         }
 
-        public IDockerFluentInterface DockerTasks()
+        public GitVersionTask GitVersionTask()
         {
-            _dockerFluentInterface.Context = Context;
+            return Context.CreateTask<GitVersionTask>();
+        }
+
+        public DockerFluentInterface DockerTasks()
+        {
             return _dockerFluentInterface;
         }
 
@@ -265,6 +269,12 @@ namespace FlubuCore.Context.FluentInterface
         public CopyFileTask CopyFileTask(string sourceFileName, string destinationFileName, bool overwrite)
         {
             return Context.CreateTask<CopyFileTask>(sourceFileName, destinationFileName, overwrite);
+        }
+
+        /// <inheritdoc />
+        public TouchFileTask TouchFile(string fileName)
+        {
+            return Context.CreateTask<TouchFileTask>(fileName);
         }
 
         /// <inheritdoc />
@@ -350,6 +360,11 @@ namespace FlubuCore.Context.FluentInterface
         public SqlCmdTask SqlCmdTask(params string[] sqlFiles)
         {
             return Context.CreateTask<SqlCmdTask>(sqlFiles.ToList());
+        }
+
+        public T4TemplateTask GenerateT4Template(string templateFileName)
+        {
+            return Context.CreateTask<T4TemplateTask>(templateFileName);
         }
     }
 }

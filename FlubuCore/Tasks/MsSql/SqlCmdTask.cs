@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using FlubuCore.Context;
 using FlubuCore.Tasks.Process;
 
@@ -8,7 +9,7 @@ namespace FlubuCore.Tasks.MsSql
     /// <summary>
     /// Execute SQL script file with sqlcmd.exe
     /// </summary>
-    public class SqlCmdTask : ExternalProcessTaskBase<SqlCmdTask>
+    public class SqlCmdTask : ExternalProcessTaskBase<int, SqlCmdTask>
     {
         private const string DefaultSqlCmdExe =
             @"C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\130\Tools\Binn\SQLCMD.EXE";
@@ -123,7 +124,7 @@ namespace FlubuCore.Tasks.MsSql
         /// <returns></returns>
         public SqlCmdTask Password(string password)
         {
-            WithArgumentsValueRequired("-P", password);
+            WithArgumentsValueRequired("-P", password, true);
             return this;
         }
 
@@ -194,8 +195,14 @@ namespace FlubuCore.Tasks.MsSql
 
                 task
                     .WithArguments("-i")
-                    .WithArguments(file)
-                    .WithArguments(args.ToArray())
+                    .WithArguments(file);
+                foreach (var arg in args)
+                {
+                    task.WithArguments(arg.arg, arg.maskArg);
+                }
+
+                task
+                    .WithArguments(args.Select(x => x.arg).ToArray())
                     .CaptureErrorOutput()
                     .CaptureOutput()
                     .WorkingFolder(ExecuteWorkingFolder)

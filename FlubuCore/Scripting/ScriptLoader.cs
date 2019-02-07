@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FlubuCore.IO.Wrappers;
 using FlubuCore.Scripting.Analysis;
+using FlubuCore.Scripting.Attributes;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -35,7 +36,8 @@ namespace FlubuCore.Scripting
 
         private readonly IFileWrapper _file;
         private readonly IDirectoryWrapper _directory;
-        private readonly IScriptAnalyser _analyser;
+        private readonly IProjectFileAnalyzer _projectFileAnalyzer;
+        private readonly IScriptAnalyzer _scriptAnalyzer;
         private readonly IBuildScriptLocator _buildScriptLocator;
         private readonly INugetPackageResolver _nugetPackageResolver;
 
@@ -44,14 +46,16 @@ namespace FlubuCore.Scripting
         public ScriptLoader(
             IFileWrapper file,
             IDirectoryWrapper directory,
-            IScriptAnalyser analyser,
+            IProjectFileAnalyzer projectFileAnalyzer,
+            IScriptAnalyzer scriptAnalyzer,
             IBuildScriptLocator buildScriptLocator,
             INugetPackageResolver nugetPackageResolver,
             ILogger<ScriptLoader> log)
         {
             _file = file;
             _directory = directory;
-            _analyser = analyser;
+            _projectFileAnalyzer = projectFileAnalyzer;
+            _scriptAnalyzer = scriptAnalyzer;
             _log = log;
             _buildScriptLocator = buildScriptLocator;
             _nugetPackageResolver = nugetPackageResolver;
@@ -64,16 +68,17 @@ namespace FlubuCore.Scripting
             buildScriptAssemblyPath = Path.ChangeExtension(buildScriptAssemblyPath, "dll");
 
             List<string> code = _file.ReadAllLines(buildScriptFilePath);
-            AnalyserResult analyserResult = _analyser.Analyze(code);
+            ScriptAnalyzerResult scriptAnalyzerResult = _scriptAnalyzer.Analyze(code);
+            ProjectFileAnalyzerResult projectFileAnalyzerResult = _projectFileAnalyzer.Analyze(disableAnalysis: scriptAnalyzerResult.ScriptAttributes.Contains(ScriptAttributes.DisableLoadScriptReferencesAutomatically));
             bool oldWay = false;
 #if NET462
           oldWay = true;
 #endif
-            var references = GetBuildScriptReferences(args, analyserResult, code, oldWay, buildScriptFilePath);
+            var references = GetBuildScriptReferences(args, projectFileAnalyzerResult, scriptAnalyzerResult, code, oldWay, buildScriptFilePath);
 
             if (oldWay)
             {
-                return await CreateBuildScriptInstanceOldWay(buildScriptFilePath, references, code, analyserResult);
+                return await CreateBuildScriptInstanceOldWay(buildScriptFilePath, references, code, scriptAnalyzerResult);
             }
 
             var assembly = TryLoadBuildScriptFromAssembly(buildScriptAssemblyPath, buildScriptFilePath);
@@ -197,46 +202,60 @@ namespace FlubuCore.Scripting
             }
         }
 
-        private IEnumerable<MetadataReference> GetBuildScriptReferences(CommandArguments args,
-            AnalyserResult analyserResult, List<string> code, bool oldWay, string pathToBuildScript)
+        private IEnumerable<MetadataReference> GetBuildScriptReferences(CommandArguments args, ProjectFileAnalyzerResult projectFileAnalyzerResult, ScriptAnalyzerResult scriptAnalyzerResult, List<string> code, bool oldWay, string pathToBuildScript)
         {
             var coreDir = Path.GetDirectoryName(typeof(object).GetTypeInfo().Assembly.Location);
             var flubuCoreAssembly = typeof(DefaultBuildScript).GetTypeInfo().Assembly;
             var flubuPath = flubuCoreAssembly.Location;
 
             //// Default assemblies that should be referenced.
-            var assemblyReferenceLocations = oldWay
+            var assemblyReferences = oldWay
                 ? GetBuildScriptReferencesForOldWayBuildScriptCreation()
                 : GetDefaultReferences(coreDir, flubuPath);
 
             // Enumerate all assemblies referenced by FlubuCore
             // and provide them as references to the build script we're about to
             // compile.
-            AssemblyName[] referencedAssemblies = flubuCoreAssembly.GetReferencedAssemblies();
-            foreach (var referencedAssembly in referencedAssemblies)
+            AssemblyName[] flubuReferencedAssemblies = flubuCoreAssembly.GetReferencedAssemblies();
+            foreach (var referencedAssembly in flubuReferencedAssemblies)
             {
                 Assembly loadedAssembly = Assembly.Load(referencedAssembly);
                 if (string.IsNullOrEmpty(loadedAssembly.Location))
                     continue;
 
-                assemblyReferenceLocations.Add(loadedAssembly.Location);
+                assemblyReferences.AddOrUpdateAssemblyInfo(new AssemblyInfo
+                {
+                    Name = referencedAssembly.Name,
+                    Version = referencedAssembly.Version,
+                    FullPath = loadedAssembly.Location,
+                });
             }
 
-            assemblyReferenceLocations.AddRange(analyserResult.References);
-            assemblyReferenceLocations.AddRange(
-                _nugetPackageResolver.ResolveNugetPackages(analyserResult.NugetPackages, pathToBuildScript));
-            AddOtherCsFilesToBuildScriptCode(analyserResult, assemblyReferenceLocations, code);
-            assemblyReferenceLocations.AddRange(FindAssemblyReferencesInDirectories(args.AssemblyDirectories));
-            assemblyReferenceLocations =
-                assemblyReferenceLocations.Distinct().Where(x => !string.IsNullOrEmpty(x)).ToList();
+            assemblyReferences.AddOrUpdateAssemblyInfo(scriptAnalyzerResult.AssemblyReferences);
+
+            if (projectFileAnalyzerResult.ProjectFileFound)
+            {
+                assemblyReferences.AddOrUpdateAssemblyInfo(_nugetPackageResolver.ResolveNugetPackagesFromFlubuCsproj(projectFileAnalyzerResult));
+                AddAssemblyReferencesFromCsproj(projectFileAnalyzerResult, assemblyReferences);
+            }
+            else
+            {
+                assemblyReferences.AddOrUpdateAssemblyInfo(_nugetPackageResolver.ResolveNugetPackagesFromDirectives(scriptAnalyzerResult.NugetPackageReferences, pathToBuildScript));
+            }
+
+            AddOtherCsFilesToBuildScriptCode(scriptAnalyzerResult, assemblyReferences, code);
+            var assemblyReferencesLocations = assemblyReferences.Select(x => x.FullPath).ToList();
+            assemblyReferencesLocations.AddRange(FindAssemblyReferencesInDirectories(args.AssemblyDirectories));
+            assemblyReferencesLocations =
+                assemblyReferencesLocations.Distinct().Where(x => !string.IsNullOrEmpty(x)).ToList();
             IEnumerable<PortableExecutableReference> references = null;
 
-            references = assemblyReferenceLocations.Select(i =>
+            references = assemblyReferencesLocations.Select(i =>
             {
                 return MetadataReference.CreateFromFile(i);
             });
 #if !NET462
-            foreach (var assemblyReferenceLocation in assemblyReferenceLocations)
+            foreach (var assemblyReferenceLocation in assemblyReferencesLocations)
             {
                 try
                 {
@@ -250,19 +269,38 @@ namespace FlubuCore.Scripting
             return references;
         }
 
-        private List<string> GetDefaultReferences(string coreDir, string flubuPath)
+        private List<AssemblyInfo> GetDefaultReferences(string coreDir, string flubuPath)
         {
-            List<string> assemblyReferenceLocations = new List<string>
+            var flubuAss = typeof(DefaultBuildScript).GetTypeInfo().Assembly;
+            var objAss = typeof(object).GetTypeInfo().Assembly;
+            var linqAss = typeof(ILookup<string, string>).GetTypeInfo().Assembly;
+#pragma warning disable SA1305 // Field names should not use Hungarian notation
+            var ioAss = typeof(Stream).GetTypeInfo().Assembly;
+#pragma warning restore SA1305 // Field names should not use Hungarian notation
+            var linqExpAss = typeof(Expression).GetTypeInfo().Assembly;
+            var reflectionAss = typeof(MethodInfo).GetTypeInfo().Assembly;
+            var runtimeInteropAss = typeof(OSPlatform).GetTypeInfo().Assembly;
+            List<AssemblyInfo> assemblyReferenceLocations = new List<AssemblyInfo>
             {
-                Path.Combine(coreDir, "mscorlib.dll"),
-                Path.Combine(coreDir, "System.Runtime.dll"),
-                typeof(object).GetTypeInfo().Assembly.Location,
-                flubuPath,
-                typeof(ILookup<string, string>).GetTypeInfo().Assembly.Location,
-                typeof(Stream).GetTypeInfo().Assembly.Location,
-                typeof(Expression).GetTypeInfo().Assembly.Location,
-                typeof(MethodInfo).GetTypeInfo().Assembly.Location,
-                typeof(OSPlatform).GetTypeInfo().Assembly.Location,
+               new AssemblyInfo
+               {
+                   Name = "mscorlib",
+                   FullPath = Path.Combine(coreDir, "mscorlib.dll"),
+                   VersionStatus = VersionStatus.Sealed,
+               },
+               new AssemblyInfo
+               {
+                   Name = "System.Runtime",
+                   FullPath = Path.Combine(coreDir, "System.Runtime.dll"),
+                   VersionStatus = VersionStatus.Sealed
+               },
+               flubuAss.ToAssemblyInfo(),
+               objAss.ToAssemblyInfo(),
+               linqAss.ToAssemblyInfo(),
+               ioAss.ToAssemblyInfo(),
+               linqExpAss.ToAssemblyInfo(),
+               reflectionAss.ToAssemblyInfo(),
+               runtimeInteropAss.ToAssemblyInfo(),
             };
 
             assemblyReferenceLocations.AddReferenceByAssemblyName("System");
@@ -286,51 +324,66 @@ namespace FlubuCore.Scripting
             assemblyReferenceLocations.AddReferenceByAssemblyName("System.Private.Uri");
 
 #if NETSTANDARD2_0
-            assemblyReferenceLocations.Add(typeof(Console).GetTypeInfo().Assembly.Location);
+            var systemAss = typeof(Console).GetTypeInfo().Assembly;
+            assemblyReferenceLocations.Add(systemAss.ToAssemblyInfo());
 #endif
             return assemblyReferenceLocations;
         }
 
-        private List<string> GetBuildScriptReferencesForOldWayBuildScriptCreation()
+        private List<AssemblyInfo> GetBuildScriptReferencesForOldWayBuildScriptCreation()
         {
             var coreDir = Path.GetDirectoryName(typeof(object).GetTypeInfo().Assembly.Location);
-            var flubuPath = typeof(DefaultBuildScript).GetTypeInfo().Assembly.Location;
-            List<string> assemblyReferenceLocations = new List<string>
+            var flubuAss = typeof(DefaultBuildScript).GetTypeInfo().Assembly;
+
+            var objAss = typeof(object).GetTypeInfo().Assembly;
+#pragma warning disable SA1305 // Field names should not use Hungarian notation
+            var ioAss = typeof(File).GetTypeInfo().Assembly;
+#pragma warning restore SA1305 // Field names should not use Hungarian notation
+            var linqAss = typeof(ILookup<string, string>).GetTypeInfo().Assembly;
+            var linqExpAss = typeof(Expression).GetTypeInfo().Assembly;
+            var runtimeInteropAss = typeof(OSPlatform).GetTypeInfo().Assembly;
+            List<AssemblyInfo> assemblyReferenceLocations = new List<AssemblyInfo>
             {
-                Path.Combine(coreDir, "mscorlib.dll"),
-                typeof(object).GetTypeInfo().Assembly.Location,
-                flubuPath,
-                typeof(File).GetTypeInfo().Assembly.Location,
-                typeof(ILookup<string, string>).GetTypeInfo().Assembly.Location,
-                typeof(Expression).GetTypeInfo().Assembly.Location,
-                typeof(OSPlatform).GetTypeInfo().Assembly.Location,
+                new AssemblyInfo
+                {
+                    Name = "mscorlib",
+                    FullPath = Path.Combine(coreDir, "mscorlib.dll"),
+                    VersionStatus = VersionStatus.Sealed,
+                },
+                flubuAss.ToAssemblyInfo(),
+                objAss.ToAssemblyInfo(),
+                ioAss.ToAssemblyInfo(),
+                linqAss.ToAssemblyInfo(),
+                linqExpAss.ToAssemblyInfo(),
+                runtimeInteropAss.ToAssemblyInfo(),
             };
 
 #if NETSTANDARD2_0
-            assemblyReferenceLocations.Add(typeof(Console).GetTypeInfo().Assembly.Location);
+            var systemAss = typeof(Console).GetTypeInfo().Assembly;
+            assemblyReferenceLocations.Add(systemAss.ToAssemblyInfo());
 #endif
 
             return assemblyReferenceLocations;
         }
 
-        private void AddOtherCsFilesToBuildScriptCode(AnalyserResult analyserResult, List<string> assemblyReferenceLocations, List<string> code)
+        private void AddOtherCsFilesToBuildScriptCode(ScriptAnalyzerResult analyzerResult, List<AssemblyInfo> assemblyReferenceLocations, List<string> code)
         {
-            foreach (var file in analyserResult.CsFiles)
+            foreach (var file in analyzerResult.CsFiles)
             {
                 if (_file.Exists(file))
                 {
                     _log.LogInformation($"File found: {file}");
                     List<string> additionalCode = _file.ReadAllLines(file);
 
-                    AnalyserResult additionalCodeAnalyserResult = _analyser.Analyze(additionalCode);
-                    if (additionalCodeAnalyserResult.CsFiles.Count > 0)
+                    ScriptAnalyzerResult additionalCodeAnalyzerResult = _scriptAnalyzer.Analyze(additionalCode);
+                    if (additionalCodeAnalyzerResult.CsFiles.Count > 0)
                     {
                         throw new NotSupportedException("//#imp is only supported in main buildscript .cs file.");
                     }
 
                     var usings = additionalCode.Where(x => x.StartsWith("using"));
 
-                    assemblyReferenceLocations.AddRange(additionalCodeAnalyserResult.References);
+                    assemblyReferenceLocations.AddOrUpdateAssemblyInfo(additionalCodeAnalyzerResult.AssemblyReferences);
                     code.InsertRange(1, usings);
                     code.AddRange(additionalCode.Where(x => !x.StartsWith("using")));
                 }
@@ -358,7 +411,7 @@ namespace FlubuCore.Scripting
             return assemblyLocations;
         }
 
-        private async Task<IBuildScript> CreateBuildScriptInstanceOldWay(string buildScriptFIlePath, IEnumerable<MetadataReference> references, List<string> code,  AnalyserResult analyserResult)
+        private async Task<IBuildScript> CreateBuildScriptInstanceOldWay(string buildScriptFIlePath, IEnumerable<MetadataReference> references, List<string> code,  ScriptAnalyzerResult analyzerResult)
         {
             ScriptOptions opts = ScriptOptions.Default
                 .WithEmitDebugInformation(true)
@@ -368,7 +421,7 @@ namespace FlubuCore.Scripting
 
             Script script = CSharpScript
                 .Create(string.Join("\r\n", code), opts)
-                .ContinueWith(string.Format("var sc = new {0}();", analyserResult.ClassName));
+                .ContinueWith(string.Format("var sc = new {0}();", analyzerResult.ClassName));
 
             try
             {
@@ -391,6 +444,28 @@ namespace FlubuCore.Scripting
                 }
 
                 throw new ScriptLoaderExcetpion($"Csharp source code file: {buildScriptFIlePath} has some compilation errors. {e.Message}.", e);
+            }
+        }
+
+#pragma warning disable SA1204 // Static elements should appear before instance elements
+        private static void AddAssemblyReferencesFromCsproj(ProjectFileAnalyzerResult projectFileAnalyzerResult, List<AssemblyInfo> assemblyReferences)
+#pragma warning restore SA1204 // Static elements should appear before instance elements
+        {
+            foreach (var reference in projectFileAnalyzerResult.AssemblyReferences)
+            {
+                if (!string.IsNullOrEmpty(reference.Path))
+                {
+                    assemblyReferences.AddOrUpdateAssemblyInfo(new AssemblyInfo
+                    {
+                        VersionStatus = VersionStatus.NotAvailable,
+                        FullPath = reference.Path,
+                        Name = reference.Name
+                    });
+                }
+                else
+                {
+                    assemblyReferences.AddReferenceByAssemblyName(reference.Name);
+                }
             }
         }
     }

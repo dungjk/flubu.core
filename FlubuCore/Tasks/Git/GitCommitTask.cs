@@ -6,7 +6,7 @@ using FlubuCore.Tasks.Process;
 
 namespace FlubuCore.Tasks.Git
 {
-    public class GitCommitTask : ExternalProcessTaskBase<GitCommitTask>
+    public class GitCommitTask : ExternalProcessTaskBase<int, GitCommitTask>
     {
         private readonly List<string> _files;
 
@@ -15,6 +15,7 @@ namespace FlubuCore.Tasks.Git
         public GitCommitTask()
          {
              _files = new List<string>();
+             ExecutablePath = "git";
              InsertArgument(0, "commit");
          }
 

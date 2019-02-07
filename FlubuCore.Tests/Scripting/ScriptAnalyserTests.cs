@@ -2,7 +2,8 @@
 using System.Linq;
 using FlubuCore.IO.Wrappers;
 using FlubuCore.Scripting.Analysis;
-using FlubuCore.Scripting.Processors;
+using FlubuCore.Scripting.Analysis.Processors;
+using FlubuCore.Scripting.Attributes;
 using Moq;
 using Xunit;
 
@@ -10,7 +11,7 @@ namespace FlubuCore.Tests.Scripting
 {
     public class ScriptAnalyserTests
     {
-        private readonly IScriptAnalyser _analyser;
+        private readonly IScriptAnalyzer _analyzer;
 
         private Mock<IFileWrapper> _fileWrapper;
 
@@ -22,16 +23,16 @@ namespace FlubuCore.Tests.Scripting
 
             _pathWrapper = new Mock<IPathWrapper>();
 
-            List<IDirectiveProcessor> processors = new List<IDirectiveProcessor>()
+            List<IScriptProcessor> processors = new List<IScriptProcessor>()
             {
                 new ClassDirectiveProcessor(),
                 new AssemblyDirectiveProcessor(_fileWrapper.Object, _pathWrapper.Object),
-                new NamespaceDirectiveProcessor(),
+                new NamespaceProcessor(),
                 new CsDirectiveProcessor(),
                 new NugetPackageDirectirveProcessor()
             };
 
-            _analyser = new ScriptAnalyser(processors);
+            _analyzer = new ScriptAnalyzer(processors);
         }
 
         [Theory]
@@ -43,7 +44,7 @@ namespace FlubuCore.Tests.Scripting
         public void GetClassNameFromBuildScriptCodeTest(string code, string expectedClassName)
         {
             ClassDirectiveProcessor pr = new ClassDirectiveProcessor();
-            AnalyserResult res = new AnalyserResult();
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
             pr.Process(res, code, 1);
             Assert.Equal(expectedClassName, res.ClassName);
         }
@@ -57,21 +58,21 @@ namespace FlubuCore.Tests.Scripting
             AssemblyDirectiveProcessor pr = new AssemblyDirectiveProcessor(_fileWrapper.Object, _pathWrapper.Object);
             _pathWrapper.Setup(x => x.GetExtension(expected)).Returns(".dll");
             _fileWrapper.Setup(x => x.Exists(expected)).Returns(true);
-            AnalyserResult res = new AnalyserResult();
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
             pr.Process(res, line, 1);
-            Assert.Equal(expected, res.References.First());
+            Assert.Equal(expected, res.AssemblyReferences.First().FullPath);
         }
 
         [Theory]
         [InlineData("//#nuget FlubuCore, 2.7.0", "FlubuCore", "2.7.0")]
         [InlineData("//#nuget RockStar, 2.0.0  \r\n", "RockStar", "2.0.0")]
-        public void NugetRefrence(string line, string expectedId, string expectedVersion)
+        public void NugetReference(string line, string expectedId, string expectedVersion)
         {
             NugetPackageDirectirveProcessor pr = new NugetPackageDirectirveProcessor();
-            AnalyserResult res = new AnalyserResult();
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
             pr.Process(res, line, 1);
-            Assert.Equal(expectedId, res.NugetPackages.First().Id);
-            Assert.Equal(expectedVersion, res.NugetPackages.First().Version);
+            Assert.Equal(expectedId, res.NugetPackageReferences.First().Id);
+            Assert.Equal(expectedVersion, res.NugetPackageReferences.First().Version);
         }
 
         [Theory]
@@ -81,13 +82,35 @@ namespace FlubuCore.Tests.Scripting
         public void ParseCs(string line, string expected)
         {
             CsDirectiveProcessor pr = new CsDirectiveProcessor();
-            AnalyserResult res = new AnalyserResult();
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
             pr.Process(res, line, 1);
             Assert.Equal(expected, res.CsFiles.First());
         }
 
+        [Theory]
+        [InlineData("[DisableLoadScriptReferencesAutomatically]", FlubuCore.Scripting.Attributes.ScriptAttributes.DisableLoadScriptReferencesAutomatically)]
+        [InlineData("[DisableLoadScriptReferencesAutomaticallyAttribute]", FlubuCore.Scripting.Attributes.ScriptAttributes.DisableLoadScriptReferencesAutomatically)]
+        [InlineData("[DisableLoadScriptReferencesAutomatically2]", null)]
+        [InlineData("[ADisableLoadScriptReferencesAutomatically]", null)]
+        [InlineData("DisableLoadScriptReferencesAutomatically]", null)]
+        [InlineData("[DisableLoadScriptReferencesAutomatically", null)]
+        public void ScriptAttributes(string line, ScriptAttributes? expected)
+        {
+            AttributesProcessor pr = new AttributesProcessor();
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
+            pr.Process(res, line, 1);
+            if (expected.HasValue)
+            {
+                Assert.True(res.ScriptAttributes.Contains(expected.Value));
+            }
+            else
+            {
+                Assert.True(res.ScriptAttributes.Count == 0);
+            }
+        }
+
         [Fact]
-        public void Analyse()
+        public void Analyze()
         {
             List<string> lines = new List<string>()
             {
@@ -102,11 +125,11 @@ namespace FlubuCore.Tests.Scripting
             _pathWrapper.Setup(x => x.GetExtension(It.IsAny<string>())).Returns(".dll");
             _fileWrapper.Setup(x => x.Exists(It.IsAny<string>())).Returns(true);
 
-            var res = _analyser.Analyze(lines);
+            var res = _analyzer.Analyze(lines);
 
             Assert.Equal("MyScript", res.ClassName);
-            Assert.Single(res.References);
-            Assert.Single(res.NugetPackages);
+            Assert.Single(res.AssemblyReferences);
+            Assert.Single(res.NugetPackageReferences);
             Assert.Single(res.CsFiles);
             Assert.Equal(2, lines.Count);
         }
@@ -125,7 +148,7 @@ namespace FlubuCore.Tests.Scripting
                 "}"
             };
 
-            _analyser.Analyze(lines);
+            _analyzer.Analyze(lines);
             Assert.Equal(4, lines.Count);
         }
     }

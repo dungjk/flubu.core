@@ -2,8 +2,8 @@
 using FlubuCore.Commanding;
 using FlubuCore.Scripting;
 using FlubuCore.Scripting.Analysis;
-using FlubuCore.Scripting.Processors;
-using Microsoft.Extensions.CommandLineUtils;
+using FlubuCore.Scripting.Analysis.Processors;
+using McMaster.Extensions.CommandLineUtils;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace DotNet.Cli.Flubu.Infrastructure
@@ -25,13 +25,14 @@ namespace DotNet.Cli.Flubu.Infrastructure
         public static IServiceCollection AddScriptAnalyser(this IServiceCollection services)
         {
             return services
-                .AddSingleton<IScriptAnalyser, ScriptAnalyser>()
-                .AddSingleton<IDirectiveProcessor, CsDirectiveProcessor>()
-                .AddSingleton<IDirectiveProcessor, ClassDirectiveProcessor>()
-                .AddSingleton<IDirectiveProcessor, AssemblyDirectiveProcessor>()
-                .AddSingleton<IDirectiveProcessor, ReferenceDirectiveProcessor>()
-                .AddSingleton<IDirectiveProcessor, NamespaceDirectiveProcessor>()
-                .AddSingleton<IDirectiveProcessor, NugetPackageDirectirveProcessor>();
+                .AddSingleton<IProjectFileAnalyzer, ProjectFileAnalyzer>()
+                .AddSingleton<IScriptAnalyzer, ScriptAnalyzer>()
+                .AddSingleton<IScriptProcessor, CsDirectiveProcessor>()
+                .AddSingleton<IScriptProcessor, ClassDirectiveProcessor>()
+                .AddSingleton<IScriptProcessor, AssemblyDirectiveProcessor>()
+                .AddSingleton<IScriptProcessor, ReferenceDirectiveProcessor>()
+                .AddSingleton<IScriptProcessor, NamespaceProcessor>()
+                .AddSingleton<IScriptProcessor, NugetPackageDirectirveProcessor>();
         }
 
         public static IServiceCollection AddArguments(this IServiceCollection services, string[] args)

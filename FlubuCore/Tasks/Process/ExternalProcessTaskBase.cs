@@ -1,14 +1,15 @@
 ﻿using System.Collections.Generic;
+using System.Text;
 using FlubuCore.Context;
 
 namespace FlubuCore.Tasks.Process
 {
-    public abstract class ExternalProcessTaskBase<TTask> : TaskBase<int, TTask>, IExternalProcess<TTask>
+    public abstract class ExternalProcessTaskBase<TResult, TTask> : TaskBase<TResult, TTask>, IExternalProcess<TTask>
         where TTask : class, ITask
     {
         // ReSharper disable once InconsistentNaming
 #pragma warning disable SA1300 // Element should begin with upper-case letter
-        private List<(string argKey, string argValue, bool valueRequired)> _arguments { get; } = new List<(string argKey, string argValue, bool valueRequired)>();
+        private List<(string argKey, string argValue, bool valueRequired, bool maskArg)> _arguments { get; } = new List<(string argKey, string argValue, bool valueRequired, bool maskArg)>();
 #pragma warning restore SA1300 // Element should begin with upper-case letter
 
         /// <summary>
@@ -18,6 +19,10 @@ namespace FlubuCore.Tasks.Process
         /// Working folder.
         /// </value>
         protected string ExecuteWorkingFolder { get; set; }
+
+        protected string ProgramOutput { get; set; }
+
+        protected virtual bool GetProgramOutput { get; } = false;
 
         /// <summary>
         /// Executable path.
@@ -29,7 +34,7 @@ namespace FlubuCore.Tasks.Process
         /// </summary>
         protected bool NoOutputLog { get; set; }
 
-        internal List<string> GetArguments()
+        protected internal List<string> GetArguments()
         {
             var argumentsFlat = new List<string>();
             foreach (var arg in _arguments)
@@ -45,11 +50,11 @@ namespace FlubuCore.Tasks.Process
             return argumentsFlat;
         }
 
-        protected TTask InsertArgument(int index, string arg)
+        protected TTask InsertArgument(int index, string arg, bool maskArg = false)
         {
             if (!string.IsNullOrEmpty(arg))
             {
-                 _arguments.Insert(index, (arg, null, false));
+                 _arguments.Insert(index, (arg, null, false, maskArg));
             }
 
             return this as TTask;
@@ -61,23 +66,24 @@ namespace FlubuCore.Tasks.Process
         /// </summary>
         /// <param name="argKey"></param>
         /// <param name="argValue"></param>
+        /// <param name="maskValue">If <c>true</c> value is masked.</param>
         /// <returns></returns>
-        protected TTask WithArgumentsValueRequired(string argKey, string argValue)
+        protected TTask WithArgumentsValueRequired(string argKey, string argValue, bool maskValue = false)
         {
             if (!string.IsNullOrEmpty(argKey))
             {
-                _arguments.Add((argKey, argValue, true));
+                _arguments.Add((argKey, argValue, true, maskValue));
             }
 
             return this as TTask;
         }
 
         /// <inheritdoc />
-        public TTask WithArguments(string arg)
+        public TTask WithArguments(string arg, bool maskArg)
         {
             if (!string.IsNullOrEmpty(arg))
             {
-                _arguments.Add((arg, null, false));
+                _arguments.Add((arg, null, false, maskArg));
             }
 
             return this as TTask;
@@ -88,7 +94,7 @@ namespace FlubuCore.Tasks.Process
         {
             foreach (var arg in args)
             {
-                _arguments.Add((arg, null, false));
+                _arguments.Add((arg, null, false, false));
             }
 
             return this as TTask;
@@ -132,8 +138,13 @@ namespace FlubuCore.Tasks.Process
         }
 
         /// <inheritdoc />
-        protected override int DoExecute(ITaskContextInternal context)
+        protected override TResult DoExecute(ITaskContextInternal context)
         {
+            if (string.IsNullOrEmpty(ExecutablePath))
+            {
+                throw new TaskExecutionException($"{nameof(ExecutablePath)} must be set.", 5);
+            }
+
             IRunProgramTask task = context.Tasks().RunProgramTask(ExecutablePath);
 
             if (NoOutputLog)
@@ -149,30 +160,46 @@ namespace FlubuCore.Tasks.Process
             task
                 .CaptureErrorOutput()
                 .CaptureOutput()
-                .WorkingFolder(ExecuteWorkingFolder)
-                .WithArguments(argumentsFlat.ToArray());
+                .WorkingFolder(ExecuteWorkingFolder);
+            foreach (var arg in argumentsFlat)
+            {
+                task.WithArguments(arg.arg, arg.maskArg);
+            }
 
-            return task.Execute(context);
+            var result = task.Execute(context);
+
+            if (GetProgramOutput)
+            {
+                ProgramOutput = task.GetOutput();
+            }
+
+            if (typeof(TResult) == typeof(int))
+            {
+                return (TResult)(object)result;
+            }
+
+            return default(TResult);
         }
 
-        protected List<string> ValidateAndGetArgumentsFlat()
+        protected List<(string arg, bool maskArg)> ValidateAndGetArgumentsFlat()
         {
-            var argumentsFlat = new List<string>();
+            var argumentsFlat = new List<(string arg, bool maskArg)>();
 
             foreach (var arg in _arguments)
             {
-                argumentsFlat.Add(arg.argKey);
-
                 if (string.IsNullOrEmpty(arg.argValue))
                 {
                     if (arg.valueRequired)
                     {
                         throw new TaskExecutionException($"Argument key {arg.argKey} requires value.", 0);
                     }
+
+                    argumentsFlat.Add((arg.argKey, arg.maskArg));
                 }
                 else
                 {
-                    argumentsFlat.Add(arg.argValue);
+                    argumentsFlat.Add((arg.argKey, false));
+                    argumentsFlat.Add((arg.argValue, arg.maskArg));
                 }
             }
 

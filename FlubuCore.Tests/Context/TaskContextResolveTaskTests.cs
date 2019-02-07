@@ -517,15 +517,15 @@ namespace FlubuCore.Tests.Context
         }
 
         [Fact]
-        public void ResolveDockerRemoveContainerTask()
+        public void ResolveGitSubmoduleTask()
         {
-            Assert.NotNull(Context.Tasks().DockerTasks().RemoveContainer("a", "b"));
+            Assert.NotNull(Context.Tasks().GitTasks().Submodule().Init());
         }
 
         [Fact]
-        public void ResolveDockerRemoveImageTask()
+        public void ResolveGitVersionTask()
         {
-            Assert.NotNull(Context.Tasks().DockerTasks().RemoveImage("a", "b"));
+            Assert.NotNull(Context.Tasks().GitVersionTask());
         }
     }
 }

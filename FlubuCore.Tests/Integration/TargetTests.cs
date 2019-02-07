@@ -220,25 +220,6 @@ namespace FlubuCore.Tests.Integration
         }
 
         [Fact]
-        [Trait("Category", "OnlyWindows")]
-        public async Task DoAsyncTargetTest2()
-        {
-            TargetTree targetTree = new TargetTree(ServiceProvider, new CommandArguments { TargetsToExecute = new List<string> { "target3", "target1", "target2" } });
-
-            var target1 = targetTree.AddTarget("target1").DoAsync(DoWithDelay).DoAsync(DoWithDelay2);
-
-            Stopwatch sw = new Stopwatch();
-
-            sw.Start();
-
-            await target1.ExecuteVoidAsync(Context);
-            sw.Stop();
-
-            Assert.True(sw.ElapsedMilliseconds > 3000, $"Task took to complete {sw.ElapsedMilliseconds} miliseconds");
-            Assert.True(sw.ElapsedMilliseconds < 5999, $"Task took to complete {sw.ElapsedMilliseconds} miliseconds");
-        }
-
-        [Fact]
         public void ForMember_PropertyTestWithDoTask_SuccesfullArgumentPassThrough()
         {
             var doTask = new DoTask2<string>(ForMemberDoTest, "test");
@@ -247,17 +228,37 @@ namespace FlubuCore.Tests.Integration
             doTask.Execute(Context);
         }
 
-        public void ForMemberDoTest(ITaskContext context, string param)
+        [Fact]
+        public void Must_ConditionNotMeet_ThrowsException()
+        {
+            TargetTree targetTree = _provider.GetService<TargetTree>();
+
+            var target1 = targetTree.AddTarget("target1");
+
+            target1.AddTask(null, new SimpleTask(new FileWrapper())).Must(() => false);
+
+            var ex = Assert.Throws<TaskExecutionException>(() => target1.ExecuteVoid(Context));
+            Assert.Equal(50, ex.ErrorCode);
+        }
+
+        [Fact]
+        public void Must_ConditionMeet_ExecutesTarget()
+        {
+            TargetTree targetTree = _provider.GetService<TargetTree>();
+
+            var target1 = targetTree.AddTarget("target1");
+
+            target1.AddTask(null, new SimpleTask(new FileWrapper())).Must(() => true);
+
+            target1.ExecuteVoid(Context);
+        }
+
+        private void ForMemberDoTest(ITaskContext context, string param)
         {
             Assert.Equal("value from arg", param);
         }
 
         private async Task DoWithDelay(ITaskContext context)
-        {
-           await Task.Delay(3000);
-        }
-
-        private async Task DoWithDelay2(ITaskContext context)
         {
            await Task.Delay(3000);
         }

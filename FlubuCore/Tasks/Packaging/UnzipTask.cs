@@ -56,7 +56,10 @@ namespace FlubuCore.Tasks.Packaging
                     using (var sr = new StreamReader(ms))
                     {
                         var serializer = new JsonSerializer();
-                        metadata = serializer.Deserialize<ZipMetadata>(new JsonTextReader(sr));
+                        using (var jst = new JsonTextReader(sr))
+                        {
+                            metadata = serializer.Deserialize<ZipMetadata>(jst);
+                        }
                     }
                 }
 
@@ -71,7 +74,7 @@ namespace FlubuCore.Tasks.Packaging
 
                     if (metadata == null)
                     {
-                        ExtractToFiles(context, entry, os, new List<string> { zipFile });
+                        ExtractToFiles(entry, os, new List<string> { zipFile });
                         continue;
                     }
 
@@ -83,14 +86,14 @@ namespace FlubuCore.Tasks.Packaging
                         continue;
                     }
 
-                    ExtractToFiles(context, entry, os, metaItem.DestinationFiles);
+                    ExtractToFiles(entry, os, metaItem.DestinationFiles);
                 }
             }
 
             return 0;
         }
 
-        private void ExtractToFiles(ITaskContextInternal context, ZipArchiveEntry entry, OSPlatform os, List<string> files)
+        private void ExtractToFiles(ZipArchiveEntry entry, OSPlatform os, List<string> files)
         {
             foreach (string zipFile in files)
             {
@@ -99,11 +102,19 @@ namespace FlubuCore.Tasks.Packaging
                 if (os != OSPlatform.Windows)
                     tmpFile = zipFile.Replace('\\', Path.DirectorySeparatorChar);
 
-                string file = Path.Combine(_destination, tmpFile);
+                string file = Path.GetFullPath(Path.Combine(_destination, tmpFile));
                 string folder = Path.GetDirectoryName(file);
 
                 if (!Directory.Exists(folder))
+                {
                     Directory.CreateDirectory(folder);
+                }
+
+                string fullDestDirPath = Path.GetFullPath(_destination + Path.DirectorySeparatorChar);
+                if (!file.StartsWith(fullDestDirPath))
+                {
+                    throw new System.InvalidOperationException($"Entry is outside the target dir: {file}");
+                }
 
                 DoLogInfo($"inflating: {file}");
                 entry.ExtractToFile(file, true);

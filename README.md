@@ -10,6 +10,11 @@
 
 ![FlubuCore in action](https://raw.githubusercontent.com/flubu-core/flubu.core/master/demo.gif)
 
+FlubuCore offers a .net (core) console application that uses power of roslyn to compile and execute scripts. Above example can be run from console with:
+
+* FlubuCore runner  ``` flubu.exe Default ```
+* FlubuCore dotnet cli tool ``` dotnet flubu Default ```
+* FlubuCore global tool ``` flubu Default ```
 ## Features and Advantages
 
 * Intuitive an easy to learn. C#, fluent interface, and IntelliSense make even most complex script creation a breeze.
@@ -22,7 +27,7 @@
           .When(c => c.BuildSystems().Jenkins().IsRunningOnJenkins);
     ```
           
-* [Large number of often used built-in tasks](https://github.com/flubu-core/flubu.core/wiki/4-Tasks) like e.g. running tests, managing IIS, creating deployment packages, publishing NuGet packages, executing PowerShell scripts and many more.
+* [Large number of often used built-in tasks](https://github.com/flubu-core/flubu.core/wiki/4-Tasks) like e.g. running tests, managing IIS, creating deployment packages, publishing NuGet packages, docker tasks, executing PowerShell scripts and many more.
 
     ```
     target
@@ -86,7 +91,7 @@
  ```
   flubu.exe compile -solution=someOtherSolution.sln -sn=true
  ```
-* [Extending FlubuCore fluent interface by writing your own FlubuCore tasks.](https://github.com/flubu-core/flubu.core/wiki/5-How-to-write-and-use-FlubuCore-task-plugins)
+* [Extending FlubuCore fluent interface by writing your own tasks within FlubuCore plugins.](https://github.com/flubu-core/flubu.core/wiki/5-How-to-write-and-use-FlubuCore-task-plugins)
 
     ```
     public class ExampleFlubuPluginTask : TaskBase<int, ExampleFlubuPluginTask>
@@ -98,6 +103,7 @@
         }
     }
     ```
+* [Growing list of FlubuCore plugins complements built in tasks.](https://github.com/flubu-core/flubu.core/wiki/90-Awesome-FlubuCore-plugins)
 
 * [Asynchronous execution of tasks, target dependencies and custom code.](https://github.com/flubu-core/flubu.core/wiki/2-Build-script-fundamentals#Async-execution)
 
@@ -124,8 +130,6 @@
 * [Easily automate deployments remotely via the FlubuCore Web API.](https://github.com/flubu-core/flubu.core/wiki/7-Web-Api:-Getting-started)
 
 * [Possibility to use FlubuCore tasks in any other .NET application.](https://github.com/flubu-core/examples/blob/master/NetCore_csproj/BuildScript/BuildScriptTests.cs)
-
-* [Cake have a lot of addins that are quite usefull. If needed any of them can be used in FlubuCore.](https://github.com/flubu-core/FlubuCore.CakePlugin)
 
 * Improved developer experience with FlubuCore custom analyzers.
 
@@ -166,7 +170,7 @@ Please see [CONTRIBUTING.md](./CONTRIBUTING.md).
 ### Ways to Contribute
 
 * Spread the word about the project.
-* If you like the project please don't forget to give it a star so that the community get's bigger.
+* If you like the project don't forget to give it a star so that the community get's bigger.
 * Improve documentation.
 * Report, fix a bug.
 * Implement a new feature.

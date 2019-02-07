@@ -6,7 +6,7 @@ using FlubuCore.Tasks.Process;
 
 namespace FlubuCore.Tasks.Git
 {
-    public class GitTagTask : ExternalProcessTaskBase<GitTagTask>
+    public class GitTagTask : ExternalProcessTaskBase<int, GitTagTask>
     {
         private readonly string _tagName;
         private string _description;
@@ -17,6 +17,7 @@ namespace FlubuCore.Tasks.Git
         public GitTagTask(string tagName)
         {
             _tagName = tagName;
+            ExecutablePath = "git";
             InsertArgument(0, "tag");
         }
 

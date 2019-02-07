@@ -5,12 +5,13 @@ using FlubuCore.Tasks.Process;
 
 namespace FlubuCore.Tasks.Git
 {
-    public class GitPushTask : ExternalProcessTaskBase<GitPullTask>
+    public class GitPushTask : ExternalProcessTaskBase<int, GitPullTask>
     {
         private string _description;
 
          public GitPushTask()
          {
+             ExecutablePath = "git";
              InsertArgument(0, "push");
          }
 
