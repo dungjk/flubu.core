@@ -95,3 +95,6 @@ FlubuCore.TaskGenerator.Tests/obj/
 FlubuCore.TaskGenerator.Tests/b.cs
 FlubuCore.TaskGenerator/.vs/
 FlubuCore/.vs/
+FlubuCore.WebApi/Updates/
+FlubuCore.WebApi.Updater/obj/
+FlubuCore.WebApi.Updater/bin/

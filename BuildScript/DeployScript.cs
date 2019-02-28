@@ -61,7 +61,7 @@ namespace DeploymentScript
             var dbFileName = Files.GetFileNameFromConnectionString(connectionString);
             var isPathRooted = Path.IsPathRooted(dbFileName);
 
-            if (!config.CopyOnlyBinaries)
+            if (!config.IsUpdate)
             {
                 if (config.RecreateDatabase)
                 {
@@ -140,6 +140,16 @@ namespace DeploymentScript
                 {
                     File.Delete(outputDbFilePath);
                 }
+
+                if (File.Exists("FlubuCore.WebApi/appsettings.json"))
+                {
+                    File.Delete("FlubuCore.WebApi/appsettings.json");
+                }
+
+                if (File.Exists("FlubuCore.WebApi/web.config"))
+                {
+                    File.Delete("FlubuCore.WebApi/web.config");
+                }
             }
 
             context.Tasks().CopyDirectoryStructureTask("FlubuCore.Webapi", config.DeploymentPath, true).Execute(context);
@@ -162,14 +172,14 @@ namespace DeploymentScript
             catch (NotSupportedException) { }
             if (ReferenceEquals(fi, null))
             {
-                throw new ArgumentException("DeploymentPath is not a legal path. Did u use double '\\'?");
+                throw new ArgumentException("DeploymentPath is not a legal path. Did you use double '\\'?");
             }
 else
             {
 
             }
 
-            if (config.CopyOnlyBinaries)
+            if (config.IsUpdate)
             {
                 return;
             }
@@ -242,7 +252,7 @@ else
 
             public bool RecreateDatabase { get; set; }
 
-            public bool CopyOnlyBinaries { get; set; }
+            public bool IsUpdate { get; set; }
 
             public bool AllowScriptUpload { get; set; }
 

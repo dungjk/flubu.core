@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using FlubuCore.Commanding;
 using FlubuCore.Context;
@@ -21,6 +22,7 @@ using FlubuCore.Tasks.NetCore;
 using FlubuCore.Tasks.Solution;
 using FlubuCore.Tasks.Testing;
 using FlubuCore.Tasks.Versioning;
+using FlubuCore.WebApi.Client;
 using FlubuCore.WebApi.Controllers.Attributes;
 using FlubuCore.WebApi.Repository;
 using FlubuCore.WebApi.Services;
@@ -28,6 +30,7 @@ using LiteDB;
 using Microsoft.DotNet.Cli.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Octokit;
 
 namespace FlubuCore.WebApi.Infrastructure
 {
@@ -71,6 +74,11 @@ namespace FlubuCore.WebApi.Infrastructure
             services.AddTransient<INotificationService, NotificationService>();
             services.AddTransient<INugetPackageResolver, NugetPackageResolver>();
 
+            IGitHubClient gitHubClient = new GitHubClient(new Octokit.ProductHeaderValue("FlubuCore"));
+            services.AddSingleton(gitHubClient);
+
+            IWebApiClient flubuWebApiClient = new WebApiClient(new HttpClient());
+            services.AddSingleton(flubuWebApiClient);
             return services;
         }
 

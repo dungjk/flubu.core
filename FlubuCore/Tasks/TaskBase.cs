@@ -513,6 +513,30 @@ namespace FlubuCore.Tasks
         }
 
         /// <summary>
+        /// Log info if task logging is not disabled.
+        /// </summary>
+        /// <param name="message"></param>
+        protected void DoLogInfo(string message, ConsoleColor foregroundColor)
+        {
+            if (DoNotLog || Context == null)
+                return;
+
+            Context.LogInfo(message, foregroundColor);
+        }
+
+        /// <summary>
+        /// Log info if task logging is not disabled.
+        /// </summary>
+        /// <param name="message"></param>
+        protected void DoLogInfo(string message, ConsoleColor backgroundColor, ConsoleColor foregroundColor)
+        {
+            if (DoNotLog || Context == null)
+                return;
+
+            Context.LogInfo(message, backgroundColor, foregroundColor);
+        }
+
+        /// <summary>
         /// Log error if task logging is not disabled.
         /// </summary>
         /// <param name="message"></param>
@@ -522,6 +546,30 @@ namespace FlubuCore.Tasks
                 return;
 
             Context.LogError(message);
+        }
+
+        /// <summary>
+        /// Log error if task logging is not disabled.
+        /// </summary>
+        /// <param name="message"></param>
+        protected void DoLogError(string message, ConsoleColor foregroundColor)
+        {
+            if (DoNotLog || Context == null)
+                return;
+
+            Context.LogError(message, foregroundColor);
+        }
+
+        /// <summary>
+        /// Log error if task logging is not disabled.
+        /// </summary>
+        /// <param name="message"></param>
+        protected void DoLogError(string message, ConsoleColor backgroundColor, ConsoleColor foregroundColor)
+        {
+            if (DoNotLog || Context == null)
+                return;
+
+            Context.LogError(message, backgroundColor, foregroundColor);
         }
 
         protected VSSolution GetRequiredVSSolution()
