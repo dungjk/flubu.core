@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using FlubuCore.IO.Wrappers;
 using FlubuCore.Scripting.Analysis;
 using FlubuCore.Scripting.Analysis.Processors;
 using FlubuCore.Scripting.Attributes;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -17,19 +19,23 @@ namespace FlubuCore.Tests.Scripting
 
         private Mock<IPathWrapper> _pathWrapper;
 
+        private Mock<IDirectoryWrapper> _directory;
+
         public ScriptAnalyserTests()
         {
             _fileWrapper = new Mock<IFileWrapper>();
 
             _pathWrapper = new Mock<IPathWrapper>();
 
+            _directory = new Mock<IDirectoryWrapper>();
+
             List<IScriptProcessor> processors = new List<IScriptProcessor>()
             {
                 new ClassDirectiveProcessor(),
-                new AssemblyDirectiveProcessor(_fileWrapper.Object, _pathWrapper.Object),
+                new AssemblyDirectiveProcessor(_fileWrapper.Object, _pathWrapper.Object, new Mock<ILogger<AssemblyDirectiveProcessor>>().Object),
                 new NamespaceProcessor(),
                 new CsDirectiveProcessor(),
-                new NugetPackageDirectirveProcessor()
+                new NugetPackageDirectirveProcessor(new Mock<ILogger<NugetPackageDirectirveProcessor>>().Object)
             };
 
             _analyzer = new ScriptAnalyzer(processors);
@@ -58,7 +64,7 @@ namespace FlubuCore.Tests.Scripting
         [Trait("Category", "OnlyWindows")]
         public void ParseDll(string line, string expected)
         {
-            AssemblyDirectiveProcessor pr = new AssemblyDirectiveProcessor(_fileWrapper.Object, _pathWrapper.Object);
+            AssemblyDirectiveProcessor pr = new AssemblyDirectiveProcessor(_fileWrapper.Object, _pathWrapper.Object, new Mock<ILogger<AssemblyDirectiveProcessor>>().Object);
             _pathWrapper.Setup(x => x.GetExtension(expected)).Returns(".dll");
             _fileWrapper.Setup(x => x.Exists(expected)).Returns(true);
             ScriptAnalyzerResult res = new ScriptAnalyzerResult();
@@ -71,7 +77,7 @@ namespace FlubuCore.Tests.Scripting
         [InlineData("//#nuget RockStar, 2.0.0  \r\n", "RockStar", "2.0.0")]
         public void NugetReference(string line, string expectedId, string expectedVersion)
         {
-            NugetPackageDirectirveProcessor pr = new NugetPackageDirectirveProcessor();
+            NugetPackageDirectirveProcessor pr = new NugetPackageDirectirveProcessor(new Mock<ILogger<NugetPackageDirectirveProcessor>>().Object);
             ScriptAnalyzerResult res = new ScriptAnalyzerResult();
             pr.Process(res, line, 1);
             Assert.Equal(expectedId, res.NugetPackageReferences.First().Id);
@@ -91,15 +97,19 @@ namespace FlubuCore.Tests.Scripting
         }
 
         [Theory]
-        [InlineData("[DisableLoadScriptReferencesAutomatically]", FlubuCore.Scripting.Attributes.ScriptAttributes.DisableLoadScriptReferencesAutomatically)]
-        [InlineData("[DisableLoadScriptReferencesAutomaticallyAttribute]", FlubuCore.Scripting.Attributes.ScriptAttributes.DisableLoadScriptReferencesAutomatically)]
+        [InlineData("[DisableLoadScriptReferencesAutomatically]", FlubuCore.Scripting.Attributes.ScriptConfigAttributes.DisableLoadScriptReferencesAutomatically)]
+        [InlineData("[DisableLoadScriptReferencesAutomaticallyAttribute]", FlubuCore.Scripting.Attributes.ScriptConfigAttributes.DisableLoadScriptReferencesAutomatically)]
         [InlineData("[DisableLoadScriptReferencesAutomatically2]", null)]
         [InlineData("[ADisableLoadScriptReferencesAutomatically]", null)]
         [InlineData("DisableLoadScriptReferencesAutomatically]", null)]
         [InlineData("[DisableLoadScriptReferencesAutomatically", null)]
-        public void ScriptAttributes(string line, ScriptAttributes? expected)
+        [InlineData("[AlwaysRecompileScriptAttribute]", ScriptConfigAttributes.AlwaysRecompileScript)]
+        [InlineData("[AlwaysRecompileScript]", ScriptConfigAttributes.AlwaysRecompileScript)]
+        [InlineData("[CreateBuildScriptInstanceOldWayAttribute]", ScriptConfigAttributes.CreateBuildScriptInstanceOldWayAttribute)]
+        [InlineData("[CreateBuildScriptInstanceOldWay]", ScriptConfigAttributes.CreateBuildScriptInstanceOldWayAttribute)]
+        public void ScriptConfigAttributesTests(string line, ScriptConfigAttributes? expected)
         {
-            AttributesProcessor pr = new AttributesProcessor();
+            AttributesProcessor pr = new AttributesProcessor(_fileWrapper.Object, _pathWrapper.Object, _directory.Object);
             ScriptAnalyzerResult res = new ScriptAnalyzerResult();
             pr.Process(res, line, 1);
             if (expected.HasValue)
@@ -110,6 +120,102 @@ namespace FlubuCore.Tests.Scripting
             {
                 Assert.True(res.ScriptAttributes.Count == 0);
             }
+        }
+
+        [Theory]
+        [InlineData("[Assembly($\"c:\\hello.dll\")]")]
+        [InlineData("[Assembly(@@\"c:\\hello.dll\")]")]
+        [InlineData("[Assembly(   $\"c:\\hello.dll\")]")]
+        [InlineData("[Assembly(\"c:\\hello.dll\")]")]
+        [InlineData("[Assembly  (\"c:\\hello.dll\"  )  ]")]
+        [Trait("Category", "OnlyWindows")]
+        public void AssemblyAttribute_Succesfull(string line)
+        {
+            AttributesProcessor pr = new AttributesProcessor(_fileWrapper.Object, _pathWrapper.Object, _directory.Object);
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
+            _pathWrapper.Setup(x => x.GetExtension("c:\\hello.dll")).Returns(".dll");
+            _fileWrapper.Setup(x => x.Exists("c:\\hello.dll")).Returns(true);
+            pr.Process(res, line, 1);
+            Assert.Equal("c:\\hello.dll", res.AssemblyReferences.First().FullPath);
+        }
+
+        [Theory]
+        [InlineData("[AssemblyFromDirectory  (\"c:\\hello\"  )  ]")]
+        [Trait("Category", "OnlyWindows")]
+        public void AssemblyFromDirectoryAttribute_Succesfull(string line)
+        {
+            AttributesProcessor pr = new AttributesProcessor(_fileWrapper.Object, _pathWrapper.Object, _directory.Object);
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
+            _directory
+                .Setup(x => x.GetFiles("c:\\hello", "*.dll", SearchOption.TopDirectoryOnly))
+                .Returns(new string[]
+                {
+                    "c:\\hello\\test.dll",
+                    "c:\\hello\\test2.dll",
+                });
+
+            _pathWrapper.Setup(x => x.GetExtension("c:\\hello\\test.dll")).Returns(".dll");
+            _pathWrapper.Setup(x => x.GetExtension("c:\\hello\\test2.dll")).Returns(".dll");
+            _fileWrapper.Setup(x => x.Exists("c:\\hello\\test.dll")).Returns(true);
+            _fileWrapper.Setup(x => x.Exists("c:\\hello\\test2.dll")).Returns(true);
+            pr.Process(res, line, 1);
+            Assert.Equal("c:\\hello\\test.dll", res.AssemblyReferences.First().FullPath);
+            Assert.Equal("c:\\hello\\test2.dll", res.AssemblyReferences[1].FullPath);
+
+            _fileWrapper.VerifyAll();
+            _pathWrapper.VerifyAll();
+            _directory.VerifyAll();
+        }
+
+        [Theory]
+        [InlineData("[Include($\".\\Test.cs\")]")]
+        [Trait("Category", "OnlyWindows")]
+        public void IncludeAttribute_Succesfull(string line)
+        {
+            AttributesProcessor pr = new AttributesProcessor(_fileWrapper.Object, _pathWrapper.Object, _directory.Object);
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
+            pr.Process(res, line, 1);
+            Assert.Contains("\\Test.cs", res.CsFiles[0]);
+        }
+
+        [Theory]
+        [InlineData("namespace FlubuCore.Helpers   ")]
+        [InlineData("namespace   FlubuCore.Helpers")]
+        public void NamespaceProcessor_Succesfull(string line)
+        {
+            NamespaceProcessor pr = new NamespaceProcessor();
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
+            pr.Process(res, line, 2);
+            Assert.Equal(2, res.NamespaceIndex);
+            Assert.Equal("FlubuCore.Helpers", res.Namespace);
+        }
+
+        [Theory]
+        [InlineData("[IncludeFromDirectory($\".\\Test\", true)]", true)]
+        [InlineData("[IncludeFromDirectory($\".\\Test\")]", false)]
+        [Trait("Category", "OnlyWindows")]
+        public void IncludeFromDirectoryAttribute_Succesfull(string line, bool expectedIncludeSubDir)
+        {
+            AttributesProcessor pr = new AttributesProcessor(_fileWrapper.Object, _pathWrapper.Object, _directory.Object);
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
+            pr.Process(res, line, 1);
+            Assert.Contains("\\Test", res.CsDirectories[0].Item1.path);
+            Assert.Equal(expectedIncludeSubDir, res.CsDirectories[0].Item1.includeSubDirectories);
+        }
+
+        [Theory]
+        [InlineData(@"[NugetPackage($ ""FlubuCore"",   ""2.7.0"")]")]
+        [InlineData(@"[NugetPackage(@@ ""FlubuCore"",   ""2.7.0"")]")]
+        [InlineData(@"[NugetPackage  (@@ ""FlubuCore"",""2.7.0""  )   ]")]
+        [InlineData(@"[NugetPackage(""FlubuCore"",""2.7.0"")]")]
+        [InlineData(@"[NugetPackage($""FlubuCore"",""2.7.0"")]")]
+        public void NugetPackageAttribute_Succesfull(string line)
+        {
+            AttributesProcessor pr = new AttributesProcessor(_fileWrapper.Object, _pathWrapper.Object, _directory.Object);
+            ScriptAnalyzerResult res = new ScriptAnalyzerResult();
+            pr.Process(res, line, 1);
+            Assert.Equal("FlubuCore", res.NugetPackageReferences.First().Id);
+            Assert.Equal("2.7.0", res.NugetPackageReferences.First().Version);
         }
 
         [Fact]

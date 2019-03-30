@@ -73,6 +73,7 @@ namespace FlubuCore.WebApi.Infrastructure
             services.AddTransient<ISecurityRepository, SecurityRepository>();
             services.AddTransient<INotificationService, NotificationService>();
             services.AddTransient<INugetPackageResolver, NugetPackageResolver>();
+            services.AddTransient<ITargetExtractor, TargetExtractor>();
 
             IGitHubClient gitHubClient = new GitHubClient(new Octokit.ProductHeaderValue("FlubuCore"));
             services.AddSingleton(gitHubClient);
@@ -102,7 +103,8 @@ namespace FlubuCore.WebApi.Infrastructure
                 .AddScoped<IScriptProcessor, AssemblyDirectiveProcessor>()
                 .AddScoped<IScriptProcessor, ReferenceDirectiveProcessor>()
                 .AddScoped<IScriptProcessor, NamespaceProcessor>()
-                .AddScoped<IScriptProcessor, NugetPackageDirectirveProcessor>();
+                .AddScoped<IScriptProcessor, NugetPackageDirectirveProcessor>()
+                .AddScoped<IScriptProcessor, AttributesProcessor>();
         }
 
         public static IServiceCollection AddTasksForWebApi(this IServiceCollection services)

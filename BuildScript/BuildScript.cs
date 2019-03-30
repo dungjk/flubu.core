@@ -203,7 +203,7 @@ public class BuildScript : DefaultBuildScript
         var progTask = context.Tasks().RunProgramTask(@"tools\LibZ.Tool\1.2.0\tools\libz.exe");
 
         progTask
-            .WorkingFolder(@"dotnet-flubu\bin\Release\net462\win7-x64")
+            .WorkingFolder(@"dotnet-flubu\bin\Release\net462")
             .WithArguments("add")
             .WithArguments("--libz", "Assemblies.libz")
             .WithArguments("--include", "*.dll")
@@ -214,7 +214,7 @@ public class BuildScript : DefaultBuildScript
         progTask = context.Tasks().RunProgramTask(@"tools\LibZ.Tool\1.2.0\tools\libz.exe");
 
         progTask
-            .WorkingFolder(@"dotnet-flubu\bin\Release\net462\win7-x64")
+            .WorkingFolder(@"dotnet-flubu\bin\Release\net462")
             .WithArguments("inject-libz")
             .WithArguments("--assembly", "dotnet-flubu.exe")
             .WithArguments("--libz", "Assemblies.libz")
@@ -224,27 +224,27 @@ public class BuildScript : DefaultBuildScript
         progTask = context.Tasks().RunProgramTask(@"tools\LibZ.Tool\1.2.0\tools\libz.exe");
 
         progTask
-            .WorkingFolder(@"dotnet-flubu\bin\Release\net462\win7-x64")
+            .WorkingFolder(@"dotnet-flubu\bin\Release\net462")
             .WithArguments("instrument")
             .WithArguments("--assembly", "dotnet-flubu.exe")
             .WithArguments("--libz-resources")
             .Execute(context);
 
         context.Tasks()
-            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\win7-x64\dotnet-flubu.exe", @"output\flubu.exe", true)
+            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\dotnet-flubu.exe", @"output\flubu.exe", true)
             .Execute(context);
         context.Tasks()
-            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\win7-x64\dotnet-flubu.exe.config", @"output\flubu.exe.config", true)
+            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\dotnet-flubu.exe.config", @"output\flubu.exe.config", true)
             .Execute(context);
 
         context.Tasks()
-            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\win7-x64\FlubuCore.dll", @"output\FlubuCore.dll", true)
+            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\FlubuCore.dll", @"output\FlubuCore.dll", true)
             .Execute(context);
         context.Tasks()
-            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\win7-x64\FlubuCore.xml", @"output\FlubuCore.xml", true)
+            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\\FlubuCore.xml", @"output\FlubuCore.xml", true)
             .Execute(context);
         context.Tasks()
-            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\win7-x64\FlubuCore.pdb", @"output\FlubuCore.pdb", true)
+            .CopyFileTask(@"dotnet-flubu\bin\Release\net462\FlubuCore.pdb", @"output\FlubuCore.pdb", true)
             .Execute(context);
     }
 

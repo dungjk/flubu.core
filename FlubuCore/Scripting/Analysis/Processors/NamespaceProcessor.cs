@@ -7,6 +7,7 @@
             if (line.StartsWith("namespace"))
             {
                 analyzerResult.NamespaceIndex = lineIndex;
+                analyzerResult.Namespace = line.Substring(9).Trim();
                 return false;
             }
 
