@@ -1,0 +1,115 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <WarningsAsErrors>true</WarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>Flubu.Tests</AssemblyName>
+    <PackageId>Flubu.Tests</PackageId>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+	  <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+	  <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+	  <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
+    <Version>5.1.8</Version>
+    <AssemblyVersion>5.1.8.0</AssemblyVersion>
+    <FileVersion>5.1.8.0</FileVersion>
+    <CodeAnalysisRuleSet>..\stylecop.ruleset</CodeAnalysisRuleSet>
+    <NoWarn>1701;1702;1705;1591;1573;1572;1574</NoWarn>
+  </PropertyGroup>
+ 
+  <ItemGroup>
+    <Content Include="TestData\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\ProjectFiles\ClassLibNetStandard.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\ProjectFiles\ConsoleCoreProject.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\ProjectFiles\UpdateNetCoreVersion.csproj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\ProjectFiles\UpdateNetCoreVersion2.csproj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Remove="TestData\ConsoleCoreProject\bin\**" />
+    <Content Remove="TestData\ConsoleCoreProject\obj\**" />
+    <Content Remove="TestData\ClassLibNetStandard\bin\**" />
+    <Content Remove="TestData\ClassLibNetStandard\obj\**" />
+    <Content Remove="TestData\ClassLibNetStandard\**" />
+    <Content Remove="TestData\ConsoleCoreProject\**" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <Compile Remove="TestData\BuildScripts\ForCreateTargetWithAttributes\BuildScriptParameterTypeMismatch.cs" />
+    <Compile Remove="TestData\ConsoleCoreProject\bin\**" />
+    <Compile Remove="TestData\ConsoleCoreProject\obj\**" />
+    <Compile Remove="TestData\ClassLibNetStandard\bin\**" />
+    <Compile Remove="TestData\ClassLibNetStandard\obj\**" />
+    <Compile Remove="TestData\ConsoleCoreProject\Program.cs" />
+    <Compile Remove="TestData\ClassLibNetStandard\**" />
+    <Compile Remove="TestData\ConsoleCoreProject\**" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <None Remove="appsettings.json" />
+    <None Remove="appsettings2.json" />
+    <None Remove="TestData\Flubu.ProjectVersionWithVersionQuality.txt" />
+    <None Remove="TestData\ReleaseNotes.md" />
+    <None Remove="TestData\ConsoleCoreProject\bin\**" />
+    <None Remove="TestData\ConsoleCoreProject\obj\**" />
+    <None Remove="TestData\ClassLibNetStandard\bin\**" />
+    <None Remove="TestData\ClassLibNetStandard\obj\**" />
+    <None Remove="TestData\ClassLibNetStandard\**" />
+    <None Remove="TestData\ConsoleCoreProject\**" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <Content Include="appsettings2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\dotnet-flubu\dotnet-flubu.csproj" />
+    <ProjectReference Include="..\FlubuCore\FlubuCore.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="3.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.4" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.DotNet.InternalAbstractions" Version="1.0.500-preview2-1-003177" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.6.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.4" />
+     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.4" />
+    <PackageReference Include="moq" Version="4.14.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TestData\ProjectFiles\Build.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="TestData\ConsoleCoreProject\bin\**" />
+    <EmbeddedResource Remove="TestData\ConsoleCoreProject\obj\**" />
+    <EmbeddedResource Remove="TestData\ClassLibNetStandard\bin\**" />
+    <EmbeddedResource Remove="TestData\ClassLibNetStandard\obj\**" />
+    <EmbeddedResource Remove="TestData\ClassLibNetStandard\**" />
+    <EmbeddedResource Remove="TestData\ConsoleCoreProject\**" />
+  </ItemGroup>
+</Project>

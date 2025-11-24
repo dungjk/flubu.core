@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net462;netcoreapp2.1;netcoreapp3.1;net5.0;</TargetFrameworks>
+    <WarningsAsErrors>true</WarningsAsErrors>
+    <AssemblyName>dotnet-flubu</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>dotnet-flubu</PackageId>
+    <PackageTags>dotnet;flubu;flubucore;build;builder;script;buildscript;automation;VisualStudio</PackageTags>
+    <Authors>Marko Zorec;Zoro Zorec;Micheal Tsai</Authors>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/dotnetcore/FlubuCore</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/dotnetcore/FlubuCore/blob/master/CHANGELOG.md</PackageReleaseNotes>
+    <Description>
+      This package includes the FlubuCore dotnet cli tool for executing FlubuCore scripts.
+
+      FlubuCore is a cross platform build and deployment automation system for building projects and executing deployment scripts using C# code.
+
+      Documentation can be found at: https://github.com/dotnetcore/FlubuCore
+
+      Detailed examples can be found at: https://github.com/dotnetcore/FlubuCore.Examples
+    </Description>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <AssemblyVersion>5.1.8.0</AssemblyVersion>
+    <FileVersion>5.1.8.0</FileVersion>
+    <Version>5.1.8</Version>
+    <RootNamespace>DotNet.Cli.Flubu</RootNamespace>
+    <CodeAnalysisRuleSet>..\stylecop.ruleset</CodeAnalysisRuleSet>
+    <NoWarn>1701;1702;1705;1591;1573;1572;1574</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <ReferringTargetFrameworkForProjectReferences>.NETStandard,Version=v2.0</ReferringTargetFrameworkForProjectReferences>
+    <DefineConstants>NETCOREAPP2_0;</DefineConstants>
+  </PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
+    <ReferringTargetFrameworkForProjectReferences>.NETStandard,Version=v2.0</ReferringTargetFrameworkForProjectReferences>
+    <DefineConstants>NETCOREAPP2_1;</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net462'">
+    <RuntimeIdentifiers>win7-x64;win7-x86</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net462|AnyCPU'">
+    <DefineConstants>TRACE;NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="flubureadme.txt">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FlubuCore\FlubuCore.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+
+  </ItemGroup>
+</Project>

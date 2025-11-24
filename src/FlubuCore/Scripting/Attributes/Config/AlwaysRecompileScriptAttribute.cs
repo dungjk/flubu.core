@@ -1,0 +1,9 @@
+﻿using System;
+
+namespace FlubuCore.Scripting.Attributes.Config
+{
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    public class AlwaysRecompileScriptAttribute : Attribute
+    {
+    }
+}

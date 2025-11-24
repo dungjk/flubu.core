@@ -1,0 +1,83 @@
+site_name: FlubuCore
+site_url: http://flubucore.dotnetcore.xyz
+repo_name: 'GitHub'
+repo_url: 'https://github.com/dotnetcore/FlubuCore'
+
+docs_dir: docs/en
+site_dir: site
+
+# Copyright
+copyright: Copyright &copy; <a href="http://dotnetfoundation.org">.NET Foundation</a> and contributors.  
+
+theme:
+     name: 'material'
+     palette:
+       primary: 'indigo'
+       accent: 'indigo'
+     font:
+        text: 'Roboto'        
+     feature:
+       tabs: true 
+     custom_dir: "docs/resources"
+      
+nav:
+    - 'FlubuCore': 'index.md'
+    - 'Getting started': 'getting-started.md'
+    - 'Build script fundamentals': 'buildscript-fundamentals.md'
+    - 'Build script runner': 'build-script-runner.md'
+    - 'Build script runner interactive mode': 'build-script-runner-interactive.md'
+    - 'Referencing external assemblies in build script': 'referencing-external-assemblies.md'
+    - 'Override existing options or add additional options to tasks through console': 'override-add-options.md'
+    - 'Tasks': 'tasks.md'
+    - 'How to write and use plugins': 'write-plugins.md'
+    - 'Tests and debuging': 'Tests-debugging.md' 
+    - 'Execute script in console app or pack as global tool': 'execute-script-in-console-app-or-pack-as-global-tool.md'   
+    - 'Contionous integration configuration generation': 'CI-Generation.md'    
+    - 'FlubuCore templates': 'flubu-templates.md'
+    - 'FlubuCore modules': 'flubu-modules.md'    
+    - 'Web api' :
+        - 'Getting started' : 'WebApi/getting-started.md'
+    - 'Awesome plugins': 
+        - 'Plugins': 'AwesomePlugins/awesome-plugins.md'
+    - 'Examples' :
+        - 'Index' : 'https://github.com/dotnetcore/FlubuCore.Examples'  
+    - 'FAQ': 
+        - 'FlubuCore': 'FAQ/faq.md'        
+    - 'Blogs': 
+        - 'Blogs': 'Blogs/blogs.md'
+    - '中文' :
+        - 'Index' : 'https://flubucore-zh.dotnetcore.xyz'   
+ 
+extra_css:
+   - 'stylesheets/extra.css'
+
+markdown_extensions:
+  - markdown.extensions.admonition
+  - markdown.extensions.codehilite:
+      guess_lang: false
+      linenums: true
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.meta
+  - markdown.extensions.toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: dotnetcore
+      repo: FlubuCore
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde

@@ -1,0 +1,83 @@
+site_name: FlubuCore
+site_url: http://flubucore.dotnetcore.xyz
+repo_name: 'GitHub'
+repo_url: 'https://github.com/dotnetcore/FlubuCore'
+
+docs_dir: docs/zh
+site_dir: site
+
+# Copyright
+copyright: Copyright &copy; <a href="http://dotnetfoundation.org">.NET Foundation</a> and contributors.  
+
+theme:
+     language: 'zh'
+     name: 'material'
+     palette:
+       primary: 'indigo'
+       accent: 'indigo'
+     font:
+        text: 'Roboto'        
+     feature:
+       tabs: true 
+     custom_dir: "docs/resources"
+  
+ 
+plugins:
+  - search:
+      lang: ['zh']
+ 
+nav:
+    - 'FlubuCore': 'index.md'
+    - '入门': 'getting-started.md'
+    - '构建脚本基础': 'buildscript-fundamentals.md'
+    - '构建脚本运行器': 'build-script-runner.md'
+    - '构建脚本运行器交互模式': 'build-script-runner-interactive.md'
+    - '在构建脚本中引用外部程序集': 'referencing-external-assemblies.md'
+    - '覆盖现有选项或通过控制台向任务添加其他选项': 'override-add-options.md'
+    - '任务': 'tasks.md'
+    - '编写与使用插件': 'write-plugins.md'
+    - '测试与调试': 'Tests-debugging.md'    
+    - 'Execute script in console app or pack as global tool': 'execute-script-in-console-app-or-pack-as-global-tool.md'   
+    - 'Contionous integration configuration generation': 'CI-Generation.md'   
+    - 'FlubuCore modules': 'flubu-modules.md'   
+    - 'FlubuCore templates': 'flubu-templates.md'    
+    - 'Web Api' :
+        - '入门' : 'WebApi/getting-started.md'
+    - '插件精选': 
+        - '插件': 'AwesomePlugins/awesome-plugins.md'
+    - 'FAQ': 
+        - 'FlubuCore': 'FAQ/faq.md'  
+    - '示例' :
+        - 'Index' : 'https://github.com/dotnetcore/FlubuCore.Examples'   
+  
+
+markdown_extensions:
+  - markdown.extensions.admonition
+  - markdown.extensions.codehilite:
+      guess_lang: false
+      linenums: true
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.meta
+  - markdown.extensions.toc:
+      permalink: true
+  - pymdownx.arithmatex
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: dotnetcore
+      repo: FlubuCore
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde

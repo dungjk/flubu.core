@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.0;net5.0;</TargetFrameworks>
+    <ToolCommandName>flubu</ToolCommandName>
+    <PackageTags>dotnet;flubu;flubucore;build;builder;script;buildscript;automation;VisualStudio</PackageTags>
+    <Authors>Marko Zorec;Zoro Zorec;Micheal Tsai</Authors>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/dotnetcore/FlubuCore</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/dotnetcore/FlubuCore/blob/master/CHANGELOG.md</PackageReleaseNotes>
+    <Description>
+      This package includes the flubu local / global tool for executing FlubuCore scripts.
+
+      FlubuCore is a cross platform build and deployment automation system for building projects and executing deployment scripts using C# code.
+
+      Documentation can be found at: https://github.com/dotnetcore/FlubuCore
+
+      Detailed examples can be found at: https://github.com/dotnetcore/FlubuCore.Examples
+    </Description>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <AssemblyVersion>5.1.8.0</AssemblyVersion>
+    <FileVersion>5.1.8.0</FileVersion>
+    <Version>5.1.8</Version>
+    <CodeAnalysisRuleSet>..\stylecop.ruleset</CodeAnalysisRuleSet>
+    <NoWarn>1701;1702;1705;1591;1573;1572;1574</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dotnet-flubu\dotnet-flubu.csproj" />
+  </ItemGroup>
+</Project>
